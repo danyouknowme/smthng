@@ -55,3 +55,29 @@ func (hub *Hub) broadcastToClients(message []byte) {
 		client.send <- message
 	}
 }
+
+func (hub *Hub) BroadcastToRoom(message []byte, roomId string) {
+	if room := hub.findRoomById(roomId); room != nil {
+		room.publishRoomMessage(message)
+	}
+}
+
+func (hub *Hub) findRoomById(id string) *Room {
+	var foundRoom *Room
+	for room := range hub.rooms {
+		if room.GetId() == id {
+			foundRoom = room
+			break
+		}
+	}
+
+	return foundRoom
+}
+
+func (hub *Hub) createRoom(id string) *Room {
+	room := NewRoom(id, hub.redisClient)
+	go room.RunRoom()
+	hub.rooms[room] = true
+
+	return room
+}
