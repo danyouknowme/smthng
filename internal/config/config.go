@@ -1,10 +1,14 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"github.com/spf13/viper"
+)
 
 type AppConfig struct {
 	Env  string
 	Port string
+
+	RedisDNS string `mapstructure:"REDIS_DNS"`
 }
 
 func Load(config *AppConfig) error {
