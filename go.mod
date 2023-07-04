@@ -1,4 +1,4 @@
-module github.com/danyouknowme/synnox
+module github.com/danyouknowme/smthng
 
 go 1.20
 

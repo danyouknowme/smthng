@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/danyouknowme/synnox/pkg/logger"
+	"github.com/danyouknowme/smthng/pkg/logger"
 
-	v1 "github.com/danyouknowme/synnox/internal/bussiness/domains/v1"
+	v1 "github.com/danyouknowme/smthng/internal/bussiness/domains/v1"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -132,7 +132,6 @@ func ServeWs(hub *Hub, ctx *gin.Context) {
 	}
 
 	client := newClient(conn, hub, "1234")
-	logger.Infof("Client %s connected", client.ID)
 
 	go client.writePump()
 	go client.readPump()

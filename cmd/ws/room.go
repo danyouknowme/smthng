@@ -1,8 +1,8 @@
 package ws
 
 import (
-	v1 "github.com/danyouknowme/synnox/internal/bussiness/domains/v1"
-	"github.com/danyouknowme/synnox/pkg/logger"
+	v1 "github.com/danyouknowme/smthng/internal/bussiness/domains/v1"
+	"github.com/danyouknowme/smthng/pkg/logger"
 	"github.com/go-redis/redis"
 )
 

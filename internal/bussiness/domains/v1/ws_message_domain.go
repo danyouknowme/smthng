@@ -3,7 +3,7 @@ package v1
 import (
 	"encoding/json"
 
-	"github.com/danyouknowme/synnox/pkg/logger"
+	"github.com/danyouknowme/smthng/pkg/logger"
 )
 
 type WebsocketMessage struct {
