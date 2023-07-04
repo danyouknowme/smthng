@@ -1,9 +1,11 @@
 package ws
 
 import (
+	"context"
+
 	v1 "github.com/danyouknowme/smthng/internal/bussiness/domains/v1"
 	"github.com/danyouknowme/smthng/pkg/logger"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 )
 
 type Room struct {
@@ -14,6 +16,8 @@ type Room struct {
 	broadcast   chan *v1.WebsocketMessage
 	redisClient *redis.Client
 }
+
+var ctx = context.Background()
 
 func NewRoom(id string, rds *redis.Client) *Room {
 	return &Room{
@@ -62,7 +66,7 @@ func (room *Room) broadcastToClientsInRoom(message []byte) {
 }
 
 func (room *Room) publishRoomMessage(message []byte) {
-	err := room.redisClient.Publish(room.GetId(), message).Err()
+	err := room.redisClient.Publish(ctx, room.GetId(), message).Err()
 
 	if err != nil {
 		logger.Error(err)
@@ -70,7 +74,7 @@ func (room *Room) publishRoomMessage(message []byte) {
 }
 
 func (room *Room) subscribeToRoomMessages() {
-	pubsub := room.redisClient.Subscribe(room.GetId())
+	pubsub := room.redisClient.Subscribe(ctx, room.GetId())
 
 	ch := pubsub.Channel()
 

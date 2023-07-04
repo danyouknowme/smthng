@@ -11,6 +11,7 @@ import (
 
 	"github.com/danyouknowme/smthng/cmd/ws"
 	"github.com/danyouknowme/smthng/internal/config"
+	"github.com/danyouknowme/smthng/internal/datasources"
 	"github.com/danyouknowme/smthng/internal/http/routes"
 	"github.com/danyouknowme/smthng/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -21,8 +22,8 @@ type App struct {
 	config     *config.AppConfig
 }
 
-func NewApp(config *config.AppConfig) *App {
-	router := initRouter()
+func NewApp(ds datasources.DataSources, config *config.AppConfig) *App {
+	router := initRouter(ds)
 
 	server := &http.Server{
 		Addr:    ":" + config.Port,
@@ -63,11 +64,11 @@ func (a *App) Start() error {
 	return nil
 }
 
-func initRouter() *gin.Engine {
+func initRouter(ds datasources.DataSources) *gin.Engine {
 	router := gin.New()
 
 	hub := ws.NewWebsocketHub(&ws.Config{
-		Redis: nil,
+		Redis: ds.GetRedisClient(),
 	})
 	go hub.Run()
 

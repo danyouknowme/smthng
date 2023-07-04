@@ -1,6 +1,6 @@
 package ws
 
-import "github.com/go-redis/redis"
+import "github.com/go-redis/redis/v8"
 
 type Config struct {
 	Redis *redis.Client
