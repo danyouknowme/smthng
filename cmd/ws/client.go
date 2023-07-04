@@ -2,9 +2,10 @@ package ws
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/danyouknowme/synnox/pkg/logger"
 
 	v1 "github.com/danyouknowme/synnox/internal/bussiness/domains/v1"
 	"github.com/gin-gonic/gin"
@@ -82,7 +83,6 @@ func (client *Client) writePump() {
 		case message, ok := <-client.send:
 			_ = client.conn.SetWriteDeadline(time.Now().Add(WriteWait))
 			if !ok {
-				// The hub closed the channel.
 				_ = client.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -93,7 +93,6 @@ func (client *Client) writePump() {
 			}
 			_, _ = w.Write(message)
 
-			// Attach queued chat messages to the current websockets message.
 			n := len(client.send)
 			for i := 0; i < n; i++ {
 				_, _ = w.Write(newline)
@@ -124,15 +123,16 @@ func (client *Client) disconnect() {
 }
 
 func ServeWs(hub *Hub, ctx *gin.Context) {
-	userId := ctx.MustGet("userId").(string)
+	// userId := ctx.MustGet("userId").(string)
 
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err)
 		return
 	}
 
-	client := newClient(conn, hub, userId)
+	client := newClient(conn, hub, "1234")
+	logger.Infof("Client %s connected", client.ID)
 
 	go client.writePump()
 	go client.readPump()
@@ -144,6 +144,6 @@ func (client *Client) handleNewMessage(jsonMessage []byte) {
 
 	var message v1.ReceivedMessage
 	if err := json.Unmarshal(jsonMessage, &message); err != nil {
-		log.Printf("Error on unmarshal JSON message %s", err)
+		logger.Errorf("Error on unmarshal JSON message %s", err)
 	}
 }

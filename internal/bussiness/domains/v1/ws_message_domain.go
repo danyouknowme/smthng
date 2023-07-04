@@ -2,7 +2,8 @@ package v1
 
 import (
 	"encoding/json"
-	"log"
+
+	"github.com/danyouknowme/synnox/pkg/logger"
 )
 
 type WebsocketMessage struct {
@@ -19,7 +20,7 @@ type ReceivedMessage struct {
 func (message *WebsocketMessage) Encode() []byte {
 	encoding, err := json.Marshal(message)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err)
 	}
 
 	return encoding

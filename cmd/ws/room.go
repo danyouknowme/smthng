@@ -1,9 +1,8 @@
 package ws
 
 import (
-	"log"
-
 	v1 "github.com/danyouknowme/synnox/internal/bussiness/domains/v1"
+	"github.com/danyouknowme/synnox/pkg/logger"
 	"github.com/go-redis/redis"
 )
 
@@ -66,7 +65,7 @@ func (room *Room) publishRoomMessage(message []byte) {
 	err := room.redisClient.Publish(room.GetId(), message).Err()
 
 	if err != nil {
-		log.Println(err)
+		logger.Error(err)
 	}
 }
 
