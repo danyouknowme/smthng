@@ -53,6 +53,14 @@ func Errorf(format string, args ...interface{}) {
 	log.Error().Msgf(format, args...)
 }
 
+func Panic(err error) {
+	log.Panic().Msg(err.Error())
+}
+
+func Panicf(format string, args ...interface{}) {
+	log.Panic().Msgf(format, args...)
+}
+
 func Fatal(err error) {
 	log.Fatal().Msg(err.Error())
 }
