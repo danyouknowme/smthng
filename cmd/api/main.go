@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/danyouknowme/smthng/cmd/api/server"
 	"github.com/danyouknowme/smthng/internal/config"
+	"github.com/danyouknowme/smthng/internal/datasources"
 	"github.com/danyouknowme/smthng/pkg/logger"
 )
 
@@ -17,7 +18,9 @@ func init() {
 }
 
 func main() {
-	app := server.NewApp(&appConfig)
+	datasources := datasources.NewDataSources(&appConfig)
+
+	app := server.NewApp(datasources, &appConfig)
 	if err := app.Start(); err != nil {
 		logger.Fatal(err)
 	}
