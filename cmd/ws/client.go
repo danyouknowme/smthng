@@ -7,7 +7,7 @@ import (
 
 	"github.com/danyouknowme/smthng/pkg/logger"
 
-	v1 "github.com/danyouknowme/smthng/internal/bussiness/domains/v1"
+	"github.com/danyouknowme/smthng/internal/bussiness/domains"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -141,7 +141,7 @@ func ServeWs(hub *Hub, ctx *gin.Context) {
 
 func (client *Client) handleNewMessage(jsonMessage []byte) {
 
-	var message v1.ReceivedMessage
+	var message domains.ReceivedMessage
 	if err := json.Unmarshal(jsonMessage, &message); err != nil {
 		logger.Errorf("Error on unmarshal JSON message %s", err)
 	}

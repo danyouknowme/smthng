@@ -3,7 +3,7 @@ package ws
 import (
 	"context"
 
-	v1 "github.com/danyouknowme/smthng/internal/bussiness/domains/v1"
+	"github.com/danyouknowme/smthng/internal/bussiness/domains"
 	"github.com/danyouknowme/smthng/pkg/logger"
 	"github.com/go-redis/redis/v8"
 )
@@ -13,7 +13,7 @@ type Room struct {
 	clients     map[*Client]bool
 	register    chan *Client
 	unregister  chan *Client
-	broadcast   chan *v1.WebsocketMessage
+	broadcast   chan *domains.WebsocketMessage
 	redisClient *redis.Client
 }
 
@@ -25,7 +25,7 @@ func NewRoom(id string, rds *redis.Client) *Room {
 		clients:     make(map[*Client]bool),
 		register:    make(chan *Client),
 		unregister:  make(chan *Client),
-		broadcast:   make(chan *v1.WebsocketMessage),
+		broadcast:   make(chan *domains.WebsocketMessage),
 		redisClient: rds,
 	}
 }
