@@ -1,6 +1,8 @@
 package datasources
 
 import (
+	"context"
+
 	"github.com/danyouknowme/smthng/internal/config"
 	"github.com/danyouknowme/smthng/internal/datasources/caches"
 	"github.com/danyouknowme/smthng/internal/datasources/drivers"
@@ -11,12 +13,17 @@ import (
 
 type DataSources interface {
 	GetRedisClient() *redis.Client
+	GetMongoClient() *mongo.Client
+	GetMongoCollection(collection string) *mongo.Collection
+	Close() error
 }
 
 type datasources struct {
 	redis *redis.Client
 	mongo *mongo.Client
 }
+
+const DB = "smthng"
 
 func NewDataSources(config *config.AppConfig) DataSources {
 	redisClient, err := caches.NewRedisClient(config.RedisURI)
@@ -37,4 +44,23 @@ func NewDataSources(config *config.AppConfig) DataSources {
 
 func (ds *datasources) GetRedisClient() *redis.Client {
 	return ds.redis
+}
+
+func (ds *datasources) GetMongoClient() *mongo.Client {
+	return ds.mongo
+}
+
+func (ds *datasources) GetMongoCollection(collection string) *mongo.Collection {
+	return ds.mongo.Database(DB).Collection(collection)
+}
+
+func (ds *datasources) Close() error {
+	if err := ds.redis.Close(); err != nil {
+		return err
+	}
+	if err := ds.mongo.Disconnect(context.Background()); err != nil {
+		return err
+	}
+
+	return nil
 }
