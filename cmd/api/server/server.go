@@ -18,8 +18,9 @@ import (
 )
 
 type App struct {
-	httpServer *http.Server
-	config     *config.AppConfig
+	httpServer  *http.Server
+	config      *config.AppConfig
+	datasources datasources.DataSources
 }
 
 func NewApp(ds datasources.DataSources, config *config.AppConfig) *App {
@@ -31,8 +32,9 @@ func NewApp(ds datasources.DataSources, config *config.AppConfig) *App {
 	}
 
 	return &App{
-		httpServer: server,
-		config:     config,
+		httpServer:  server,
+		config:      config,
+		datasources: ds,
 	}
 }
 
@@ -50,6 +52,12 @@ func (a *App) Start() error {
 
 	<-quit
 	logger.Info("Shutting down server...")
+
+	logger.Info("Unregistering datasources...")
+	if err := a.datasources.Close(); err != nil {
+		return fmt.Errorf("error when close datasources: %v", err)
+	}
+	logger.Info("Unregistering datasources completed")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
