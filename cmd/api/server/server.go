@@ -10,8 +10,11 @@ import (
 	"time"
 
 	"github.com/danyouknowme/smthng/cmd/ws"
+	"github.com/danyouknowme/smthng/internal/bussiness/usecases"
 	"github.com/danyouknowme/smthng/internal/config"
 	"github.com/danyouknowme/smthng/internal/datasources"
+	"github.com/danyouknowme/smthng/internal/datasources/repositories"
+	"github.com/danyouknowme/smthng/internal/http/handlers"
 	"github.com/danyouknowme/smthng/internal/http/routes"
 	"github.com/danyouknowme/smthng/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -80,7 +83,12 @@ func initRouter(ds datasources.DataSources) *gin.Engine {
 	})
 	go hub.Run()
 
+	userRepository := repositories.NewUserRepository(ds.GetMongoCollection("users"))
+	userUsecase := usecases.NewUserUsecase(userRepository)
+	userHandler := handlers.NewUserHandler(userUsecase)
+
 	routes.SetupWebSocketRoutes(router, hub)
+	routes.SetupAuthRoutes(router, userHandler)
 
 	return router
 }
