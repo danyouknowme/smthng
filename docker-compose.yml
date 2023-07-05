@@ -1,0 +1,19 @@
+services:
+  mongodb:
+    image: mongo
+    ports:
+      - 27017:27017
+    environment:
+      - TZ
+    volumes:
+      - ./volumes/mongodb-db:/data/db
+      - ./volumes/mongodb-configdb:/data/configdb
+
+  redis:
+    image: redis:7.0-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --loglevel warning
+    volumes:
+      - ./volumes/redis-cache:/data
