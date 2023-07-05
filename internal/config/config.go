@@ -8,8 +8,8 @@ type AppConfig struct {
 	Env  string
 	Port string
 
-	RedisHost string `mapstructure:"REDIS_HOST"`
-	MongoURI  string `mapstructure:"MONGO_URI"`
+	RedisURI string `mapstructure:"REDIS_URI"`
+	MongoURI string `mapstructure:"MONGO_URI"`
 }
 
 func Load(config *AppConfig) error {
