@@ -19,7 +19,10 @@ type datasources struct {
 }
 
 func NewDataSources(config *config.AppConfig) DataSources {
-	redisClient := caches.NewRedisClient(config.RedisHost)
+	redisClient, err := caches.NewRedisClient(config.RedisHost)
+	if err != nil {
+		logger.Panicf("Failed to connect to redis: %v", err)
+	}
 
 	mongoClient, err := drivers.NewMongoClient(config.MongoURI)
 	if err != nil {
