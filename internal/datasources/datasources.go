@@ -15,7 +15,7 @@ type datasources struct {
 }
 
 func NewDataSources(config *config.AppConfig) DataSources {
-	redisClient := caches.NewRedisClient(config.RedisDNS)
+	redisClient := caches.NewRedisClient(config.RedisHost)
 
 	return &datasources{
 		redis: redisClient,
