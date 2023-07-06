@@ -6,22 +6,49 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type UserMongo struct {
-	ID           primitive.ObjectID   `json:"id" bson:"_id,omitempty"`
-	Username     string               `json:"username" bson:"username"`
-	Email        string               `json:"email" bson:"email"`
-	Password     string               `json:"password" bson:"password"`
-	Tag          string               `json:"tag" bson:"tag"`
-	ProfileImage string               `json:"profile_image" bson:"profile_image"`
-	IsOnline     bool                 `json:"is_online" bson:"is_online"`
-	Friends      []primitive.ObjectID `json:"friends" bson:"friends"`
-	Requests     []primitive.ObjectID `json:"requests" bson:"requests"`
-	CreatedAt    time.Time            `json:"created_at" bson:"created_at"`
-	UpdatedAt    time.Time            `json:"updated_at" bson:"updated_at"`
+type User struct {
+	ID           string `json:"id"`
+	Username     string `json:"username"`
+	Email        string `json:"email"`
+	Tag          string `json:"tag"`
+	ProfileImage string `json:"profile_image"`
+	IsOnline     bool   `json:"is_online"`
+	Friends      []User `json:"friends"`
+	Request      []User `json:"requests"`
 }
 
-type UserRequest struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type UserMongo struct {
+	ID           primitive.ObjectID   `bson:"_id,omitempty"`
+	Username     string               `bson:"username"`
+	Email        string               `bson:"email"`
+	Password     string               `bson:"password"`
+	Tag          string               `bson:"tag"`
+	ProfileImage string               `bson:"profile_image"`
+	IsOnline     bool                 `bson:"is_online"`
+	Friends      []primitive.ObjectID `bson:"friends"`
+	Requests     []primitive.ObjectID `bson:"requests"`
+	CreatedAt    time.Time            `bson:"created_at"`
+	UpdatedAt    time.Time            `bson:"updated_at"`
+}
+
+type RegisterRequest struct {
+	Username string `json:"username" binding:"required,alphanum"`
+	Password string `json:"password" binding:"required,min=6"`
+	Email    string `json:"email" binding:"required,email"`
+}
+
+type LoginRequest struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+func (user *UserMongo) ToDomain() *User {
+	return &User{
+		ID:           user.ID.Hex(),
+		Username:     user.Username,
+		Email:        user.Email,
+		Tag:          user.Tag,
+		ProfileImage: user.ProfileImage,
+		IsOnline:     user.IsOnline,
+	}
 }

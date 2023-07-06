@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/danyouknowme/smthng/internal/bussiness/domains"
@@ -15,7 +16,8 @@ type userUsecase struct {
 }
 
 type UserUsecase interface {
-	CreateNewUser(ctx context.Context, user *domains.UserRequest) error
+	CreateNewUser(ctx context.Context, user *domains.RegisterRequest) error
+	Authenticate(ctx context.Context, req *domains.LoginRequest) (string, error)
 }
 
 func NewUserUsecase(userRepository repositories.UserRepository) UserUsecase {
@@ -24,7 +26,7 @@ func NewUserUsecase(userRepository repositories.UserRepository) UserUsecase {
 	}
 }
 
-func (usecase *userUsecase) CreateNewUser(ctx context.Context, user *domains.UserRequest) error {
+func (usecase *userUsecase) CreateNewUser(ctx context.Context, user *domains.RegisterRequest) error {
 	userMongo := &domains.UserMongo{
 		Username:  user.Username,
 		Email:     user.Email,
@@ -45,4 +47,17 @@ func (usecase *userUsecase) CreateNewUser(ctx context.Context, user *domains.Use
 
 		userMongo.Tag = helpers.GenerateTag()
 	}
+}
+
+func (usecase *userUsecase) Authenticate(ctx context.Context, req *domains.LoginRequest) (string, error) {
+	userMongo, err := usecase.userRepository.FindByUsername(ctx, req.Username)
+	if err != nil {
+		return "", err
+	}
+
+	if err = helpers.CheckPassword(req.Password, userMongo.Password); err != nil {
+		return "", errors.New("invalid username or password")
+	}
+
+	return userMongo.ID.Hex(), nil
 }
