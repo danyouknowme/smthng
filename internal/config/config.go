@@ -10,6 +10,10 @@ type AppConfig struct {
 
 	RedisURI string `mapstructure:"REDIS_URI"`
 	MongoURI string `mapstructure:"MONGO_URI"`
+
+	JwtSecret string `mapstructure:"JWT_SECRET"`
+	JwtIssuer string `mapstructure:"JWT_ISSUER"`
+	JwtExp    int    `mapstructure:"JWT_EXP"`
 }
 
 func Load(config *AppConfig) error {
