@@ -5,6 +5,7 @@ import (
 
 	"github.com/danyouknowme/smthng/internal/bussiness/domains"
 	"github.com/danyouknowme/smthng/internal/bussiness/usecases"
+	"github.com/danyouknowme/smthng/pkg/helpers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,6 +32,16 @@ func (handler *userHandler) Register(c *gin.Context) {
 		})
 		return
 	}
+
+	hashedPassword, err := helpers.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	req.Password = hashedPassword
 
 	err = handler.userUsecase.CreateNewUser(c.Request.Context(), req)
 	if err != nil {
