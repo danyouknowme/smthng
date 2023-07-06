@@ -16,6 +16,7 @@ import (
 	"github.com/danyouknowme/smthng/internal/datasources/repositories"
 	"github.com/danyouknowme/smthng/internal/http/handlers"
 	"github.com/danyouknowme/smthng/internal/http/routes"
+	"github.com/danyouknowme/smthng/pkg/jwt"
 	"github.com/danyouknowme/smthng/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -26,17 +27,17 @@ type App struct {
 	datasources datasources.DataSources
 }
 
-func NewApp(ds datasources.DataSources, config *config.AppConfig) *App {
-	router := initRouter(ds)
+func NewApp(ds datasources.DataSources, cfg *config.AppConfig) *App {
+	router := initRouter(ds, cfg)
 
 	server := &http.Server{
-		Addr:    ":" + config.Port,
+		Addr:    ":" + cfg.Port,
 		Handler: router,
 	}
 
 	return &App{
 		httpServer:  server,
-		config:      config,
+		config:      cfg,
 		datasources: ds,
 	}
 }
@@ -75,7 +76,7 @@ func (a *App) Start() error {
 	return nil
 }
 
-func initRouter(ds datasources.DataSources) *gin.Engine {
+func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 	router := gin.New()
 
 	hub := ws.NewWebsocketHub(&ws.Config{
@@ -83,9 +84,11 @@ func initRouter(ds datasources.DataSources) *gin.Engine {
 	})
 	go hub.Run()
 
+	jwtService := jwt.NewJWTService(cfg.JwtSecret, cfg.JwtIssuer, cfg.JwtExp)
+
 	userRepository := repositories.NewUserRepository(ds.GetMongoCollection("users"))
 	userUsecase := usecases.NewUserUsecase(userRepository)
-	userHandler := handlers.NewUserHandler(userUsecase)
+	userHandler := handlers.NewUserHandler(userUsecase, jwtService)
 
 	routes.SetupWebSocketRoutes(router, hub)
 	routes.SetupAuthRoutes(router, userHandler)
