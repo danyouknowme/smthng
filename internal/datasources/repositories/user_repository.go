@@ -16,6 +16,7 @@ type userRepository struct {
 
 type UserRepository interface {
 	Create(ctx context.Context, user *domains.UserMongo) error
+	FindByTag(ctx context.Context, tag string) (*domains.UserMongo, error)
 }
 
 func NewUserRepository(collection *mongo.Collection) UserRepository {
@@ -39,4 +40,14 @@ func (repo *userRepository) Create(ctx context.Context, user *domains.UserMongo)
 	}
 
 	return nil
+}
+
+func (repo *userRepository) FindByTag(ctx context.Context, tag string) (*domains.UserMongo, error) {
+	var user domains.UserMongo
+	err := repo.collection.FindOne(ctx, bson.M{"tag": tag}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }

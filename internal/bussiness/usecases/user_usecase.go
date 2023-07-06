@@ -36,6 +36,13 @@ func (usecase *userUsecase) CreateNewUser(ctx context.Context, user *domains.Use
 		UpdatedAt: time.Now(),
 	}
 
-	err := usecase.userRepository.Create(ctx, userMongo)
-	return err
+	for {
+		_, err := usecase.userRepository.FindByTag(ctx, userMongo.Tag)
+		if err != nil {
+			err := usecase.userRepository.Create(ctx, userMongo)
+			return err
+		}
+
+		userMongo.Tag = helpers.GenerateTag()
+	}
 }
