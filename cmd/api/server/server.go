@@ -15,6 +15,7 @@ import (
 	"github.com/danyouknowme/smthng/internal/datasources"
 	"github.com/danyouknowme/smthng/internal/datasources/repositories"
 	"github.com/danyouknowme/smthng/internal/http/handlers"
+	"github.com/danyouknowme/smthng/internal/http/middleware"
 	"github.com/danyouknowme/smthng/internal/http/routes"
 	"github.com/danyouknowme/smthng/pkg/jwt"
 	"github.com/danyouknowme/smthng/pkg/logger"
@@ -84,14 +85,19 @@ func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 	})
 	go hub.Run()
 
+	routeV1 := router.Group("/api/v1")
+
 	jwtService := jwt.NewJWTService(cfg.JwtSecret, cfg.JwtIssuer, cfg.JwtExp)
 
 	userRepository := repositories.NewUserRepository(ds.GetMongoCollection("users"))
 	userUsecase := usecases.NewUserUsecase(userRepository)
 	userHandler := handlers.NewUserHandler(userUsecase, jwtService)
 
-	routes.SetupWebSocketRoutes(router, hub)
-	routes.SetupAuthRoutes(router, userHandler)
+	wsRoutes := routes.NewWebSocketRoutes(routeV1, hub, jwtService, middleware.AuthMiddleware(jwtService))
+	wsRoutes.Register()
+
+	authRoutes := routes.NewAuthRoutes(routeV1, userHandler)
+	authRoutes.Register()
 
 	return router
 }
