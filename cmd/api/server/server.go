@@ -80,11 +80,6 @@ func (a *App) Start() error {
 func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 	router := gin.New()
 
-	hub := ws.NewWebsocketHub(&ws.Config{
-		Redis: ds.GetRedisClient(),
-	})
-	go hub.Run()
-
 	routeV1 := router.Group("/api/v1")
 
 	jwtService := jwt.NewJWTService(cfg.JwtSecret, cfg.JwtIssuer, cfg.JwtExp)
@@ -93,11 +88,24 @@ func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 	userUsecase := usecases.NewUserUsecase(userRepository)
 	userHandler := handlers.NewUserHandler(userUsecase, jwtService)
 
-	wsRoutes := routes.NewWebSocketRoutes(routeV1, hub, jwtService, middleware.AuthMiddleware(jwtService))
-	wsRoutes.Register()
+	channelRepository := repositories.NewChannelRepository(ds.GetMongoCollection("channels"))
+	channelUsecase := usecases.NewChannelUsecase(channelRepository)
+	channelHandler := handlers.NewChannelHandler(channelUsecase)
+
+	channelRoutes := routes.NewChannelRoutes(routeV1, channelHandler, middleware.AuthMiddleware(jwtService))
+	channelRoutes.Register()
 
 	authRoutes := routes.NewAuthRoutes(routeV1, userHandler)
 	authRoutes.Register()
+
+	hub := ws.NewWebsocketHub(&ws.Config{
+		ChannelUsecase: channelUsecase,
+		Redis:          ds.GetRedisClient(),
+	})
+	go hub.Run()
+
+	wsRoutes := routes.NewWebSocketRoutes(routeV1, hub, jwtService, middleware.AuthMiddleware(jwtService))
+	wsRoutes.Register()
 
 	return router
 }

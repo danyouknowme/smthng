@@ -29,7 +29,7 @@ func NewUserHandler(userUsecase usecases.UserUsecase, jwtService jwt.JWTService)
 
 func (handler *userHandler) Register(c *gin.Context) {
 	var req *domains.RegisterRequest
-	err := c.BindJSON(&req)
+	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),

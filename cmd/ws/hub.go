@@ -1,28 +1,34 @@
 package ws
 
-import "github.com/go-redis/redis/v8"
+import (
+	"github.com/danyouknowme/smthng/internal/bussiness/usecases"
+	"github.com/go-redis/redis/v8"
+)
 
 type Config struct {
-	Redis *redis.Client
+	ChannelUsecase usecases.ChannelUsecase
+	Redis          *redis.Client
 }
 
 type Hub struct {
-	clients     map[*Client]bool
-	register    chan *Client
-	unregister  chan *Client
-	broadcast   chan []byte
-	rooms       map[*Room]bool
-	redisClient *redis.Client
+	clients        map[*Client]bool
+	register       chan *Client
+	unregister     chan *Client
+	broadcast      chan []byte
+	rooms          map[*Room]bool
+	channelUsecase usecases.ChannelUsecase
+	redisClient    *redis.Client
 }
 
 func NewWebsocketHub(c *Config) *Hub {
 	return &Hub{
-		clients:     make(map[*Client]bool),
-		register:    make(chan *Client),
-		unregister:  make(chan *Client),
-		broadcast:   make(chan []byte),
-		rooms:       make(map[*Room]bool),
-		redisClient: c.Redis,
+		clients:        make(map[*Client]bool),
+		register:       make(chan *Client),
+		unregister:     make(chan *Client),
+		broadcast:      make(chan []byte),
+		rooms:          make(map[*Room]bool),
+		channelUsecase: c.ChannelUsecase,
+		redisClient:    c.Redis,
 	}
 }
 

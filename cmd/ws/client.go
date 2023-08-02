@@ -2,12 +2,14 @@ package ws
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/danyouknowme/smthng/pkg/logger"
 
 	"github.com/danyouknowme/smthng/internal/bussiness/domains"
+	"github.com/danyouknowme/smthng/internal/http/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -81,6 +83,7 @@ func (client *Client) writePump() {
 	for {
 		select {
 		case message, ok := <-client.send:
+			fmt.Println("send message to client", string(message))
 			_ = client.conn.SetWriteDeadline(time.Now().Add(WriteWait))
 			if !ok {
 				_ = client.conn.WriteMessage(websocket.CloseMessage, []byte{})
@@ -123,7 +126,7 @@ func (client *Client) disconnect() {
 }
 
 func ServeWs(hub *Hub, ctx *gin.Context) {
-	// userId := ctx.MustGet("userId").(string)
+	userId := ctx.MustGet(middleware.AuthorizationUserIdKey).(string)
 
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
@@ -131,7 +134,7 @@ func ServeWs(hub *Hub, ctx *gin.Context) {
 		return
 	}
 
-	client := newClient(conn, hub, "1234")
+	client := newClient(conn, hub, userId)
 
 	go client.writePump()
 	go client.readPump()
@@ -140,9 +143,41 @@ func ServeWs(hub *Hub, ctx *gin.Context) {
 }
 
 func (client *Client) handleNewMessage(jsonMessage []byte) {
-
 	var message domains.ReceivedMessage
 	if err := json.Unmarshal(jsonMessage, &message); err != nil {
 		logger.Errorf("Error on unmarshal JSON message %s", err)
 	}
+
+	switch message.Action {
+	case "join_channel":
+		client.handleJoinChannelMessage(message)
+	}
+}
+
+func (client *Client) handleJoinRoomMessage(message domains.ReceivedMessage) {
+	roomID := message.RoomID
+
+	room := client.hub.findRoomById(roomID)
+	if room == nil {
+		room = client.hub.createRoom(roomID)
+	}
+
+	client.rooms[room] = true
+
+	room.register <- client
+}
+
+func (client *Client) handleJoinChannelMessage(message domains.ReceivedMessage) {
+	roomID := message.RoomID
+
+	channel, err := client.hub.channelUsecase.GetChannelByID(roomID)
+	if err != nil {
+		return
+	}
+
+	if ok := client.hub.channelUsecase.IsMember(channel.ID, client.ID); !ok {
+		return
+	}
+
+	client.handleJoinRoomMessage(message)
 }

@@ -42,7 +42,7 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func (user *UserMongo) ToDomain() *User {
+func (user *UserMongo) Serialize() *User {
 	return &User{
 		ID:           user.ID.Hex(),
 		Username:     user.Username,

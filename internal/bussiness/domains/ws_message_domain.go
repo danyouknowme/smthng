@@ -13,7 +13,7 @@ type WebsocketMessage struct {
 
 type ReceivedMessage struct {
 	Action  string `json:"action"`
-	Room    string `json:"room"`
+	RoomID  string `json:"room_id"`
 	Message *any   `json:"message"`
 }
 
