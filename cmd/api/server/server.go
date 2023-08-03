@@ -84,8 +84,8 @@ func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 
 	jwtService := jwt.NewJWTService(cfg.JwtSecret, cfg.JwtIssuer, cfg.JwtExp)
 
-	userRepository := repositories.NewUserRepository(ds.GetMongoCollection("users"))
-	channelRepository := repositories.NewChannelRepository(ds.GetMongoCollection("channels"))
+	userRepository := repositories.NewUserRepository(ds)
+	channelRepository := repositories.NewChannelRepository(ds)
 
 	userUsecase := usecases.NewUserUsecase(userRepository)
 	channelUsecase := usecases.NewChannelUsecase(channelRepository)

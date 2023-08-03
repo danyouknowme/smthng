@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/danyouknowme/smthng/internal/bussiness/domains"
+	"github.com/danyouknowme/smthng/internal/datasources"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,9 +19,9 @@ type ChannelRepository interface {
 	Create(ctx context.Context, channel *domains.ChannelMongo) error
 }
 
-func NewChannelRepository(collection *mongo.Collection) ChannelRepository {
+func NewChannelRepository(ds datasources.DataSources) ChannelRepository {
 	return &channelRepository{
-		collection: collection,
+		collection: ds.GetMongoCollection("channels"),
 	}
 }
 

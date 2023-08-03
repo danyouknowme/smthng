@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/danyouknowme/smthng/internal/bussiness/domains"
+	"github.com/danyouknowme/smthng/internal/datasources"
 	"github.com/danyouknowme/smthng/pkg/logger"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -20,7 +21,8 @@ type UserRepository interface {
 	FindByUsername(ctx context.Context, username string) (*domains.UserMongo, error)
 }
 
-func NewUserRepository(collection *mongo.Collection) UserRepository {
+func NewUserRepository(ds datasources.DataSources) UserRepository {
+	collection := ds.GetMongoCollection("users")
 	if _, err := collection.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
 		{Keys: bson.M{"username": 1}, Options: options.Index().SetUnique(true)},
 		{Keys: bson.M{"email": 1}, Options: options.Index().SetUnique(true)},
