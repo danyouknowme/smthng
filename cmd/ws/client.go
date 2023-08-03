@@ -1,8 +1,8 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -83,7 +83,6 @@ func (client *Client) writePump() {
 	for {
 		select {
 		case message, ok := <-client.send:
-			fmt.Println("send message to client", string(message))
 			_ = client.conn.SetWriteDeadline(time.Now().Add(WriteWait))
 			if !ok {
 				_ = client.conn.WriteMessage(websocket.CloseMessage, []byte{})
@@ -170,12 +169,15 @@ func (client *Client) handleJoinRoomMessage(message domains.ReceivedMessage) {
 func (client *Client) handleJoinChannelMessage(message domains.ReceivedMessage) {
 	roomID := message.RoomID
 
-	channel, err := client.hub.channelUsecase.GetChannelByID(roomID)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	channel, err := client.hub.channelUsecase.GetChannelByID(ctx, roomID)
 	if err != nil {
 		return
 	}
 
-	if ok := client.hub.channelUsecase.IsMember(channel.ID, client.ID); !ok {
+	if ok := client.hub.channelUsecase.IsMember(ctx, channel.ID, client.ID); !ok {
 		return
 	}
 

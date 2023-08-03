@@ -14,9 +14,9 @@ type channelUsecase struct {
 }
 
 type ChannelUsecase interface {
-	GetChannelByID(ID string) (*domains.Channel, error)
+	GetChannelByID(ctx context.Context, ID string) (*domains.Channel, error)
 	CreateNewChannel(ctx context.Context, channel *domains.CreateChannelRequest) error
-	IsMember(channelID string, userID string) bool
+	IsMember(ctx context.Context, channelID string, userID string) bool
 }
 
 func NewChannelUsecase(channelRepository repositories.ChannelRepository) ChannelUsecase {
@@ -25,14 +25,11 @@ func NewChannelUsecase(channelRepository repositories.ChannelRepository) Channel
 	}
 }
 
-func (usecase *channelUsecase) GetChannelByID(ID string) (*domains.Channel, error) {
+func (usecase *channelUsecase) GetChannelByID(ctx context.Context, ID string) (*domains.Channel, error) {
 	objID, err := primitive.ObjectIDFromHex(ID)
 	if err != nil {
 		return nil, err
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	channel, err := usecase.channelRepository.FindById(ctx, objID)
 	if err != nil {
@@ -78,6 +75,6 @@ func (usecase *channelUsecase) CreateNewChannel(ctx context.Context, channel *do
 	return usecase.channelRepository.Create(ctx, channelMongo)
 }
 
-func (usecase *channelUsecase) IsMember(channelID string, userID string) bool {
+func (usecase *channelUsecase) IsMember(ctx context.Context, channelID string, userID string) bool {
 	return true
 }
