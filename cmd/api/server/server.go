@@ -86,9 +86,11 @@ func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 
 	userRepository := repositories.NewUserRepository(ds)
 	channelRepository := repositories.NewChannelRepository(ds)
+	messageRepository := repositories.NewMessageRepository(ds)
 
 	userUsecase := usecases.NewUserUsecase(userRepository)
 	channelUsecase := usecases.NewChannelUsecase(channelRepository)
+	messageUsecase := usecases.NewMessageUsecase(messageRepository, userRepository)
 
 	userHandler := handlers.NewUserHandler(userUsecase, jwtService)
 	channelHandler := handlers.NewChannelHandler(channelUsecase)
@@ -100,7 +102,7 @@ func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 	go hub.Run()
 
 	socketService := ws.NewSocketService(hub, channelRepository)
-	messageHandler := handlers.NewMessageHandler(socketService)
+	messageHandler := handlers.NewMessageHandler(socketService, channelUsecase, messageUsecase)
 
 	wsRoutes := routes.NewWebSocketRoutes(routeV1, hub, jwtService, middleware.AuthMiddleware(jwtService))
 	wsRoutes.Register()
