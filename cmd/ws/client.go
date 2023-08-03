@@ -149,7 +149,7 @@ func (client *Client) handleNewMessage(jsonMessage []byte) {
 	}
 
 	switch message.Action {
-	case "join_channel":
+	case JoinChannelAction:
 		client.handleJoinChannelMessage(message)
 	}
 }
@@ -157,7 +157,7 @@ func (client *Client) handleNewMessage(jsonMessage []byte) {
 func (client *Client) handleJoinRoomMessage(message domains.ReceivedMessage) {
 	roomID := message.RoomID
 
-	room := client.hub.findRoomById(roomID)
+	room := client.hub.findRoomByID(roomID)
 	if room == nil {
 		room = client.hub.createRoom(roomID)
 	}

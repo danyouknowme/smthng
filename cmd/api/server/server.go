@@ -85,18 +85,13 @@ func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 	jwtService := jwt.NewJWTService(cfg.JwtSecret, cfg.JwtIssuer, cfg.JwtExp)
 
 	userRepository := repositories.NewUserRepository(ds.GetMongoCollection("users"))
-	userUsecase := usecases.NewUserUsecase(userRepository)
-	userHandler := handlers.NewUserHandler(userUsecase, jwtService)
-
 	channelRepository := repositories.NewChannelRepository(ds.GetMongoCollection("channels"))
+
+	userUsecase := usecases.NewUserUsecase(userRepository)
 	channelUsecase := usecases.NewChannelUsecase(channelRepository)
+
+	userHandler := handlers.NewUserHandler(userUsecase, jwtService)
 	channelHandler := handlers.NewChannelHandler(channelUsecase)
-
-	channelRoutes := routes.NewChannelRoutes(routeV1, channelHandler, middleware.AuthMiddleware(jwtService))
-	channelRoutes.Register()
-
-	authRoutes := routes.NewAuthRoutes(routeV1, userHandler)
-	authRoutes.Register()
 
 	hub := ws.NewWebsocketHub(&ws.Config{
 		ChannelUsecase: channelUsecase,
@@ -104,8 +99,20 @@ func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 	})
 	go hub.Run()
 
+	socketService := ws.NewSocketService(hub, channelRepository)
+	messageHandler := handlers.NewMessageHandler(socketService)
+
 	wsRoutes := routes.NewWebSocketRoutes(routeV1, hub, jwtService, middleware.AuthMiddleware(jwtService))
 	wsRoutes.Register()
+
+	channelRoutes := routes.NewChannelRoutes(routeV1, channelHandler, middleware.AuthMiddleware(jwtService))
+	channelRoutes.Register()
+
+	authRoutes := routes.NewAuthRoutes(routeV1, userHandler)
+	authRoutes.Register()
+
+	messageRoutes := routes.NewMessageRoutes(routeV1, messageHandler, middleware.AuthMiddleware(jwtService))
+	messageRoutes.Register()
 
 	return router
 }

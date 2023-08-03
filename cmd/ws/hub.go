@@ -35,7 +35,6 @@ func NewWebsocketHub(c *Config) *Hub {
 func (hub *Hub) Run() {
 	for {
 		select {
-
 		case client := <-hub.register:
 			hub.registerClient(client)
 
@@ -62,13 +61,13 @@ func (hub *Hub) broadcastToClients(message []byte) {
 	}
 }
 
-func (hub *Hub) BroadcastToRoom(message []byte, roomId string) {
-	if room := hub.findRoomById(roomId); room != nil {
+func (hub *Hub) BroadcastToRoom(message []byte, roomID string) {
+	if room := hub.findRoomByID(roomID); room != nil {
 		room.publishRoomMessage(message)
 	}
 }
 
-func (hub *Hub) findRoomById(id string) *Room {
+func (hub *Hub) findRoomByID(id string) *Room {
 	var foundRoom *Room
 	for room := range hub.rooms {
 		if room.GetId() == id {
