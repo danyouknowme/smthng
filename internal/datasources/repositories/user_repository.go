@@ -7,6 +7,7 @@ import (
 	"github.com/danyouknowme/smthng/internal/datasources"
 	"github.com/danyouknowme/smthng/pkg/logger"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -17,6 +18,7 @@ type userRepository struct {
 
 type UserRepository interface {
 	Create(ctx context.Context, user *domains.UserMongo) error
+	FindByID(ctx context.Context, objID primitive.ObjectID) (*domains.UserMongo, error)
 	FindByTag(ctx context.Context, tag string) (*domains.UserMongo, error)
 	FindByUsername(ctx context.Context, username string) (*domains.UserMongo, error)
 }
@@ -43,6 +45,16 @@ func (repo *userRepository) Create(ctx context.Context, user *domains.UserMongo)
 	}
 
 	return nil
+}
+
+func (repo *userRepository) FindByID(ctx context.Context, objID primitive.ObjectID) (*domains.UserMongo, error) {
+	var user domains.UserMongo
+	err := repo.collection.FindOne(ctx, bson.M{"_id": objID}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func (repo *userRepository) FindByTag(ctx context.Context, tag string) (*domains.UserMongo, error) {
