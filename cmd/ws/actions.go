@@ -5,5 +5,7 @@ const (
 )
 
 const (
-	NewMessageAction = "new_message"
+	NewMessageAction    = "new_message"
+	EditMessageAction   = "edit_message"
+	DeleteMessageAction = "delete_message"
 )
