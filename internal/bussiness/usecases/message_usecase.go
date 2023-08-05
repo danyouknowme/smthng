@@ -16,6 +16,7 @@ type messageUsecase struct {
 
 type MessageUsecase interface {
 	CreateNewMessage(ctx context.Context, message *domains.CreateMessageRequest) (*domains.Message, error)
+	UpdateMessageByID(ctx context.Context, messageID, updatedText string) (*domains.Message, error)
 }
 
 func NewMessageUsecase(messageRepository repositories.MessageRepository, userRepository repositories.UserRepository) MessageUsecase {
@@ -58,4 +59,18 @@ func (usecase *messageUsecase) CreateNewMessage(ctx context.Context, message *do
 	newMessage.Member = *user.Serialize()
 
 	return newMessage, nil
+}
+
+func (usecase *messageUsecase) UpdateMessageByID(ctx context.Context, messageID, updatedText string) (*domains.Message, error) {
+	messageObjectID, err := primitive.ObjectIDFromHex(messageID)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedMessage, err := usecase.messageRepository.UpdateByID(ctx, messageObjectID, updatedText)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedMessage.Serialize(), nil
 }

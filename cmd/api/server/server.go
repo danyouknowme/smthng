@@ -79,7 +79,6 @@ func (a *App) Start() error {
 
 func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 	router := gin.New()
-
 	routeV1 := router.Group("/api/v1")
 
 	jwtService := jwt.NewJWTService(cfg.JwtSecret, cfg.JwtIssuer, cfg.JwtExp)

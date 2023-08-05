@@ -23,6 +23,7 @@ func (r *messageRoutes) Register() {
 	messageRoutes := r.router.Group("/messages")
 	messageRoutes.Use(r.authMiddleware)
 	{
-		messageRoutes.POST("/:channelID", r.messageHandler.CreateNewMessage)
+		messageRoutes.POST("/:channelID", r.messageHandler.CreateMessage)
+		messageRoutes.PUT("/:messageID", r.messageHandler.EditMessage)
 	}
 }

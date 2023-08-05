@@ -17,7 +17,8 @@ type messageHandler struct {
 }
 
 type MessageHandler interface {
-	CreateNewMessage(c *gin.Context)
+	CreateMessage(c *gin.Context)
+	EditMessage(c *gin.Context)
 }
 
 func NewMessageHandler(
@@ -36,7 +37,7 @@ type messageRequest struct {
 	Text string `json:"text"`
 }
 
-func (handler *messageHandler) CreateNewMessage(c *gin.Context) {
+func (handler *messageHandler) CreateMessage(c *gin.Context) {
 	channelID := c.Param("channelID")
 	userID := c.MustGet(middleware.AuthorizationUserIdKey).(string)
 
@@ -93,5 +94,54 @@ func (handler *messageHandler) CreateNewMessage(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "message created",
+	})
+}
+
+func (handler *messageHandler) EditMessage(c *gin.Context) {
+	messageID := c.Param("messageID")
+	// userID := c.MustGet(middleware.AuthorizationUserIdKey).(string)
+
+	var req messageRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// if message.Member.ID != userID {
+	// 	c.JSON(http.StatusForbidden, gin.H{
+	// 		"error": "You are not the owner of this message",
+	// 	})
+	// 	return
+	// }
+
+	updatedMessage, err := handler.messageUsecase.UpdateMessageByID(c.Request.Context(), messageID, req.Text)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// response := domains.Message{
+	// 	ID:        updatedMessage.ID,
+	// 	Text:      updatedMessage.Text,
+	// 	CreatedAt: updatedMessage.CreatedAt,
+	// 	UpdatedAt: updatedMessage.UpdatedAt,
+	// 	Member: domains.User{
+	// 		ID:           updatedMessage.Member.ID,
+	// 		Username:     updatedMessage.Member.Username,
+	// 		ProfileImage: updatedMessage.Member.ProfileImage,
+	// 		IsOnline:     updatedMessage.Member.IsOnline,
+	// 	},
+	// }
+
+	// handler.socketService.EmitEditMessage(updatedMessage.ChannelID.Hex(), &response)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "message updated",
+		"updatedMessage": updatedMessage,
 	})
 }
