@@ -15,6 +15,7 @@ type messageUsecase struct {
 }
 
 type MessageUsecase interface {
+	GetMessageByID(ctx context.Context, messageID string) (*domains.Message, error)
 	CreateNewMessage(ctx context.Context, message *domains.CreateMessageRequest) (*domains.Message, error)
 	UpdateMessageByID(ctx context.Context, messageID, updatedText string) (*domains.Message, error)
 }
@@ -24,6 +25,28 @@ func NewMessageUsecase(messageRepository repositories.MessageRepository, userRep
 		messageRepository: messageRepository,
 		userRepository:    userRepository,
 	}
+}
+
+func (usecase *messageUsecase) GetMessageByID(ctx context.Context, messageID string) (*domains.Message, error) {
+	messageObjectID, err := primitive.ObjectIDFromHex(messageID)
+	if err != nil {
+		return nil, err
+	}
+
+	message, err := usecase.messageRepository.FindByID(ctx, messageObjectID)
+	if err != nil {
+		return nil, err
+	}
+
+	member, err := usecase.userRepository.FindByID(ctx, message.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	serializeMessage := message.Serialize()
+	serializeMessage.Member = member.SerializeToMember(false)
+
+	return serializeMessage, nil
 }
 
 func (usecase *messageUsecase) CreateNewMessage(ctx context.Context, message *domains.CreateMessageRequest) (*domains.Message, error) {
@@ -56,7 +79,7 @@ func (usecase *messageUsecase) CreateNewMessage(ctx context.Context, message *do
 	}
 
 	newMessage := messageMongo.Serialize()
-	newMessage.Member = *user.Serialize()
+	newMessage.Member = user.SerializeToMember(false)
 
 	return newMessage, nil
 }
@@ -72,5 +95,13 @@ func (usecase *messageUsecase) UpdateMessageByID(ctx context.Context, messageID,
 		return nil, err
 	}
 
-	return updatedMessage.Serialize(), nil
+	member, err := usecase.userRepository.FindByID(ctx, updatedMessage.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	serializeMessage := updatedMessage.Serialize()
+	serializeMessage.Member = member.SerializeToMember(false)
+
+	return serializeMessage, nil
 }

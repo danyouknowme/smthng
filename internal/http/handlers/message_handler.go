@@ -82,7 +82,7 @@ func (handler *messageHandler) CreateMessage(c *gin.Context) {
 		Text:      message.Text,
 		CreatedAt: message.CreatedAt,
 		UpdatedAt: message.UpdatedAt,
-		Member: domains.User{
+		Member: &domains.Member{
 			ID:           message.Member.ID,
 			Username:     message.Member.Username,
 			ProfileImage: message.Member.ProfileImage,
@@ -99,7 +99,7 @@ func (handler *messageHandler) CreateMessage(c *gin.Context) {
 
 func (handler *messageHandler) EditMessage(c *gin.Context) {
 	messageID := c.Param("messageID")
-	// userID := c.MustGet(middleware.AuthorizationUserIdKey).(string)
+	userID := c.MustGet(middleware.AuthorizationUserIdKey).(string)
 
 	var req messageRequest
 
@@ -110,14 +110,7 @@ func (handler *messageHandler) EditMessage(c *gin.Context) {
 		return
 	}
 
-	// if message.Member.ID != userID {
-	// 	c.JSON(http.StatusForbidden, gin.H{
-	// 		"error": "You are not the owner of this message",
-	// 	})
-	// 	return
-	// }
-
-	updatedMessage, err := handler.messageUsecase.UpdateMessageByID(c.Request.Context(), messageID, req.Text)
+	message, err := handler.messageUsecase.GetMessageByID(c.Request.Context(), messageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -125,20 +118,35 @@ func (handler *messageHandler) EditMessage(c *gin.Context) {
 		return
 	}
 
-	// response := domains.Message{
-	// 	ID:        updatedMessage.ID,
-	// 	Text:      updatedMessage.Text,
-	// 	CreatedAt: updatedMessage.CreatedAt,
-	// 	UpdatedAt: updatedMessage.UpdatedAt,
-	// 	Member: domains.User{
-	// 		ID:           updatedMessage.Member.ID,
-	// 		Username:     updatedMessage.Member.Username,
-	// 		ProfileImage: updatedMessage.Member.ProfileImage,
-	// 		IsOnline:     updatedMessage.Member.IsOnline,
-	// 	},
-	// }
+	if message.Member.ID != userID {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "You are not the owner of this message",
+		})
+		return
+	}
 
-	// handler.socketService.EmitEditMessage(updatedMessage.ChannelID.Hex(), &response)
+	updatedMessage, err := handler.messageUsecase.UpdateMessageByID(c.Request.Context(), message.ID, req.Text)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	response := domains.Message{
+		ID:        updatedMessage.ID,
+		Text:      updatedMessage.Text,
+		CreatedAt: updatedMessage.CreatedAt,
+		UpdatedAt: updatedMessage.UpdatedAt,
+		Member: &domains.Member{
+			ID:           updatedMessage.Member.ID,
+			Username:     updatedMessage.Member.Username,
+			ProfileImage: updatedMessage.Member.ProfileImage,
+			IsOnline:     updatedMessage.Member.IsOnline,
+		},
+	}
+
+	handler.socketService.EmitEditMessage(updatedMessage.ChannelID, &response)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":        "message updated",
