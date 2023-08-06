@@ -15,6 +15,8 @@ type socketService struct {
 
 type SocketService interface {
 	EmitNewMessage(room string, message *domains.Message)
+	EmitEditMessage(roomID string, message *domains.Message)
+	EmitDeleteMessage(roomID string, messageID string)
 }
 
 func NewSocketService(hub *Hub, channelRepository repositories.ChannelRepository) SocketService {
