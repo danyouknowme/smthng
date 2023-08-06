@@ -25,5 +25,6 @@ func (r *messageRoutes) Register() {
 	{
 		messageRoutes.POST("/:channelID", r.messageHandler.CreateMessage)
 		messageRoutes.PUT("/:messageID", r.messageHandler.EditMessage)
+		messageRoutes.DELETE("/:messageID", r.messageHandler.DeleteMessage)
 	}
 }

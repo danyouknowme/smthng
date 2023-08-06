@@ -19,6 +19,7 @@ type messageHandler struct {
 type MessageHandler interface {
 	CreateMessage(c *gin.Context)
 	EditMessage(c *gin.Context)
+	DeleteMessage(c *gin.Context)
 }
 
 func NewMessageHandler(
@@ -82,18 +83,14 @@ func (handler *messageHandler) CreateMessage(c *gin.Context) {
 		Text:      message.Text,
 		CreatedAt: message.CreatedAt,
 		UpdatedAt: message.UpdatedAt,
-		Member: &domains.Member{
-			ID:           message.Member.ID,
-			Username:     message.Member.Username,
-			ProfileImage: message.Member.ProfileImage,
-			IsOnline:     message.Member.IsOnline,
-		},
+		Member:    message.Member,
 	}
 
 	handler.socketService.EmitNewMessage(channelID, &response)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "message created",
+		"data":    message,
 	})
 }
 
@@ -138,18 +135,49 @@ func (handler *messageHandler) EditMessage(c *gin.Context) {
 		Text:      updatedMessage.Text,
 		CreatedAt: updatedMessage.CreatedAt,
 		UpdatedAt: updatedMessage.UpdatedAt,
-		Member: &domains.Member{
-			ID:           updatedMessage.Member.ID,
-			Username:     updatedMessage.Member.Username,
-			ProfileImage: updatedMessage.Member.ProfileImage,
-			IsOnline:     updatedMessage.Member.IsOnline,
-		},
+		Member:    message.Member,
 	}
 
 	handler.socketService.EmitEditMessage(updatedMessage.ChannelID, &response)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":        "message updated",
-		"updatedMessage": updatedMessage,
+		"message": "message updated",
+		"data":    updatedMessage,
+	})
+}
+
+func (handler *messageHandler) DeleteMessage(c *gin.Context) {
+	messageID := c.Param("messageID")
+	userID := c.MustGet(middleware.AuthorizationUserIdKey).(string)
+
+	message, err := handler.messageUsecase.GetMessageByID(c.Request.Context(), messageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	if message.Member.ID != userID {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "You are not the owner of this message",
+		})
+		return
+	}
+
+	if err := handler.messageUsecase.DeleteMessageByID(c.Request.Context(), message.ID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	handler.socketService.EmitDeleteMessage(message.ChannelID, message.ID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "message deleted",
+		"data": gin.H{
+			"message_id": message.ID,
+		},
 	})
 }

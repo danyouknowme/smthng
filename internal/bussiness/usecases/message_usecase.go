@@ -18,6 +18,7 @@ type MessageUsecase interface {
 	GetMessageByID(ctx context.Context, messageID string) (*domains.Message, error)
 	CreateNewMessage(ctx context.Context, message *domains.CreateMessageRequest) (*domains.Message, error)
 	UpdateMessageByID(ctx context.Context, messageID, updatedText string) (*domains.Message, error)
+	DeleteMessageByID(ctx context.Context, messageID string) error
 }
 
 func NewMessageUsecase(messageRepository repositories.MessageRepository, userRepository repositories.UserRepository) MessageUsecase {
@@ -104,4 +105,14 @@ func (usecase *messageUsecase) UpdateMessageByID(ctx context.Context, messageID,
 	serializeMessage.Member = member.SerializeToMember(false)
 
 	return serializeMessage, nil
+}
+
+func (usecase *messageUsecase) DeleteMessageByID(ctx context.Context, messageID string) error {
+	messageObjectID, err := primitive.ObjectIDFromHex(messageID)
+	if err != nil {
+		return err
+	}
+
+	err = usecase.messageRepository.DeleteByID(ctx, messageObjectID)
+	return err
 }
