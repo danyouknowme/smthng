@@ -18,15 +18,17 @@ type MessageMongo struct {
 type Message struct {
 	ID        string    `json:"id"`
 	Text      string    `json:"text"`
+	ChannelID string    `json:"channel_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	Member    User      `json:"user"`
+	Member    *Member   `json:"member"`
 }
 
 func (message *MessageMongo) Serialize() *Message {
 	return &Message{
 		ID:        message.ID.Hex(),
 		Text:      message.Text,
+		ChannelID: message.ChannelID.Hex(),
 		CreatedAt: message.CreatedAt,
 		UpdatedAt: message.UpdatedAt,
 	}

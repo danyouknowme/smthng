@@ -52,3 +52,13 @@ func (user *UserMongo) Serialize() *User {
 		IsOnline:     user.IsOnline,
 	}
 }
+
+func (user *UserMongo) SerializeToMember(isFriend bool) *Member {
+	return &Member{
+		ID:           user.ID.Hex(),
+		Username:     user.Username,
+		ProfileImage: user.ProfileImage,
+		IsOnline:     user.IsOnline,
+		IsFriend:     isFriend,
+	}
+}
