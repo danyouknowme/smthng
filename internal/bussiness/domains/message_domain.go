@@ -39,3 +39,7 @@ type CreateMessageRequest struct {
 	UserID    string `json:"user_id"`
 	ChannelID string `json:"channel_id"`
 }
+
+type MessageRequest struct {
+	Text string `json:"text"`
+}

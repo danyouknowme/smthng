@@ -34,15 +34,11 @@ func NewMessageHandler(
 	}
 }
 
-type messageRequest struct {
-	Text string `json:"text"`
-}
-
 func (handler *messageHandler) CreateMessage(c *gin.Context) {
 	channelID := c.Param("channelID")
 	userID := c.MustGet(middleware.AuthorizationUserIdKey).(string)
 
-	var req messageRequest
+	var req domains.MessageRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -98,7 +94,7 @@ func (handler *messageHandler) EditMessage(c *gin.Context) {
 	messageID := c.Param("messageID")
 	userID := c.MustGet(middleware.AuthorizationUserIdKey).(string)
 
-	var req messageRequest
+	var req domains.MessageRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
