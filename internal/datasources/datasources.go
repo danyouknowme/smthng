@@ -3,6 +3,7 @@ package datasources
 import (
 	"context"
 
+	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/danyouknowme/smthng/internal/config"
 	"github.com/danyouknowme/smthng/internal/datasources/caches"
 	"github.com/danyouknowme/smthng/internal/datasources/drivers"
@@ -14,13 +15,15 @@ import (
 type DataSources interface {
 	GetRedisClient() *redis.Client
 	GetMongoClient() *mongo.Client
+	GetCloudinaryClient() *cloudinary.Cloudinary
 	GetMongoCollection(collection string) *mongo.Collection
 	Close() error
 }
 
 type datasources struct {
-	redis *redis.Client
-	mongo *mongo.Client
+	redis      *redis.Client
+	mongo      *mongo.Client
+	cloudinary *cloudinary.Cloudinary
 }
 
 const DB = "smthng"
@@ -36,9 +39,15 @@ func NewDataSources(config *config.AppConfig) DataSources {
 		logger.Panicf("Failed to connect to mongo: %v", err)
 	}
 
+	cloudinary, err := drivers.NewCloudinaryClient(config.CloudinaryURI)
+	if err != nil {
+		logger.Panicf("Failed to create gridfs bucket: %v", err)
+	}
+
 	return &datasources{
-		redis: redisClient,
-		mongo: mongoClient,
+		redis:      redisClient,
+		mongo:      mongoClient,
+		cloudinary: cloudinary,
 	}
 }
 
@@ -48,6 +57,10 @@ func (ds *datasources) GetRedisClient() *redis.Client {
 
 func (ds *datasources) GetMongoClient() *mongo.Client {
 	return ds.mongo
+}
+
+func (ds *datasources) GetCloudinaryClient() *cloudinary.Cloudinary {
+	return ds.cloudinary
 }
 
 func (ds *datasources) GetMongoCollection(collection string) *mongo.Collection {

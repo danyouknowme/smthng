@@ -8,6 +8,7 @@ import (
 	"github.com/danyouknowme/smthng/internal/bussiness/usecases"
 	"github.com/danyouknowme/smthng/internal/http/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 type messageHandler struct {
@@ -40,7 +41,7 @@ func (handler *messageHandler) CreateMessage(c *gin.Context) {
 
 	var req domains.MessageRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBindWith(&req, binding.FormMultipart); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -62,8 +63,16 @@ func (handler *messageHandler) CreateMessage(c *gin.Context) {
 		return
 	}
 
+	if err := req.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
 	message, err := handler.messageUsecase.CreateNewMessage(c.Request.Context(), &domains.CreateMessageRequest{
 		Text:      req.Text,
+		File:      req.File,
 		ChannelID: channel.ID,
 		UserID:    userID,
 	})
@@ -77,6 +86,8 @@ func (handler *messageHandler) CreateMessage(c *gin.Context) {
 	response := domains.Message{
 		ID:        message.ID,
 		Text:      message.Text,
+		File:      message.File,
+		ChannelID: message.ChannelID,
 		CreatedAt: message.CreatedAt,
 		UpdatedAt: message.UpdatedAt,
 		Member:    message.Member,
@@ -118,7 +129,7 @@ func (handler *messageHandler) EditMessage(c *gin.Context) {
 		return
 	}
 
-	updatedMessage, err := handler.messageUsecase.UpdateMessageByID(c.Request.Context(), message.ID, req.Text)
+	updatedMessage, err := handler.messageUsecase.UpdateMessageByID(c.Request.Context(), message.ID, *req.Text)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -129,6 +140,8 @@ func (handler *messageHandler) EditMessage(c *gin.Context) {
 	response := domains.Message{
 		ID:        updatedMessage.ID,
 		Text:      updatedMessage.Text,
+		File:      updatedMessage.File,
+		ChannelID: updatedMessage.ChannelID,
 		CreatedAt: updatedMessage.CreatedAt,
 		UpdatedAt: updatedMessage.UpdatedAt,
 		Member:    message.Member,

@@ -8,8 +8,9 @@ type AppConfig struct {
 	Env  string
 	Port string
 
-	RedisURI string `mapstructure:"REDIS_URI"`
-	MongoURI string `mapstructure:"MONGO_URI"`
+	RedisURI      string `mapstructure:"REDIS_URI"`
+	MongoURI      string `mapstructure:"MONGO_URI"`
+	CloudinaryURI string `mapstructure:"CLD_URI"`
 
 	JwtSecret string `mapstructure:"JWT_SECRET"`
 	JwtIssuer string `mapstructure:"JWT_ISSUER"`

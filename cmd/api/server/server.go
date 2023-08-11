@@ -86,10 +86,11 @@ func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 	userRepository := repositories.NewUserRepository(ds)
 	channelRepository := repositories.NewChannelRepository(ds)
 	messageRepository := repositories.NewMessageRepository(ds)
+	fileRepository := repositories.NewFileRepository(ds)
 
 	userUsecase := usecases.NewUserUsecase(userRepository)
 	channelUsecase := usecases.NewChannelUsecase(channelRepository)
-	messageUsecase := usecases.NewMessageUsecase(messageRepository, userRepository)
+	messageUsecase := usecases.NewMessageUsecase(messageRepository, userRepository, fileRepository)
 
 	userHandler := handlers.NewUserHandler(userUsecase, jwtService)
 	channelHandler := handlers.NewChannelHandler(channelUsecase)

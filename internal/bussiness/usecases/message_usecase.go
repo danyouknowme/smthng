@@ -12,6 +12,7 @@ import (
 type messageUsecase struct {
 	messageRepository repositories.MessageRepository
 	userRepository    repositories.UserRepository
+	fileRepository    repositories.FileRepository
 }
 
 type MessageUsecase interface {
@@ -21,10 +22,15 @@ type MessageUsecase interface {
 	DeleteMessageByID(ctx context.Context, messageID string) error
 }
 
-func NewMessageUsecase(messageRepository repositories.MessageRepository, userRepository repositories.UserRepository) MessageUsecase {
+func NewMessageUsecase(
+	messageRepository repositories.MessageRepository,
+	userRepository repositories.UserRepository,
+	fileRepository repositories.FileRepository,
+) MessageUsecase {
 	return &messageUsecase{
 		messageRepository: messageRepository,
 		userRepository:    userRepository,
+		fileRepository:    fileRepository,
 	}
 }
 
@@ -66,9 +72,28 @@ func (usecase *messageUsecase) CreateNewMessage(ctx context.Context, message *do
 		return nil, err
 	}
 
+	var fileUrl *string
+	if message.File != nil {
+		uploadUrl, err := usecase.fileRepository.Upload(ctx, message.File)
+		if err != nil {
+			return nil, err
+		}
+		fileUrl = &uploadUrl
+	} else {
+		fileUrl = nil
+	}
+
+	var text *string
+	if message.Text != nil {
+		text = message.Text
+	} else {
+		text = nil
+	}
+
 	messageMongo := &domains.MessageMongo{
 		ID:        primitive.NewObjectID(),
-		Text:      message.Text,
+		Text:      text,
+		File:      fileUrl,
 		UserID:    user.ID,
 		ChannelID: channelObjectID,
 		CreatedAt: time.Now(),

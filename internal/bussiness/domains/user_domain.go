@@ -60,5 +60,7 @@ func (user *UserMongo) SerializeToMember(isFriend bool) *Member {
 		ProfileImage: user.ProfileImage,
 		IsOnline:     user.IsOnline,
 		IsFriend:     isFriend,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
 	}
 }
