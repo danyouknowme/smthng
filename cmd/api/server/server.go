@@ -81,18 +81,20 @@ func initRouter(ds datasources.DataSources, cfg *config.AppConfig) *gin.Engine {
 	router := gin.New()
 	routeV1 := router.Group("/api/v1")
 
-	jwtService := jwt.NewJWTService(cfg.JwtSecret, cfg.JwtIssuer, cfg.JwtExp)
+	jwtService := jwt.NewJWTService(cfg.TokenSymmetricKey)
 
 	userRepository := repositories.NewUserRepository(ds)
 	channelRepository := repositories.NewChannelRepository(ds)
 	messageRepository := repositories.NewMessageRepository(ds)
 	fileRepository := repositories.NewFileRepository(ds)
+	sessionRepository := repositories.NewSessionRepository(ds)
 
 	userUsecase := usecases.NewUserUsecase(userRepository)
 	channelUsecase := usecases.NewChannelUsecase(channelRepository)
 	messageUsecase := usecases.NewMessageUsecase(messageRepository, userRepository, fileRepository)
+	sessionUsecase := usecases.NewSessionUsecase(sessionRepository)
 
-	userHandler := handlers.NewUserHandler(userUsecase, jwtService)
+	userHandler := handlers.NewUserHandler(userUsecase, sessionUsecase, jwtService)
 	channelHandler := handlers.NewChannelHandler(channelUsecase)
 
 	hub := ws.NewWebsocketHub(&ws.Config{

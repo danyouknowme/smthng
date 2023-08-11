@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/danyouknowme/smthng/internal/bussiness/domains"
 	"github.com/danyouknowme/smthng/internal/bussiness/usecases"
@@ -11,8 +12,9 @@ import (
 )
 
 type userHandler struct {
-	userUsecase usecases.UserUsecase
-	jwtService  jwt.JWTService
+	userUsecase    usecases.UserUsecase
+	sessionUsecase usecases.SessionUsecase
+	jwtService     jwt.JWTService
 }
 
 type UserHandler interface {
@@ -20,10 +22,11 @@ type UserHandler interface {
 	Login(c *gin.Context)
 }
 
-func NewUserHandler(userUsecase usecases.UserUsecase, jwtService jwt.JWTService) UserHandler {
+func NewUserHandler(userUsecase usecases.UserUsecase, sessionUsecase usecases.SessionUsecase, jwtService jwt.JWTService) UserHandler {
 	return &userHandler{
-		userUsecase: userUsecase,
-		jwtService:  jwtService,
+		userUsecase:    userUsecase,
+		sessionUsecase: sessionUsecase,
+		jwtService:     jwtService,
 	}
 }
 
@@ -78,7 +81,7 @@ func (handler *userHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := handler.jwtService.GenerateToken(userID)
+	accessToken, accessTokenPayload, err := handler.jwtService.CreateToken(userID, 15*time.Minute)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -86,7 +89,26 @@ func (handler *userHandler) Login(c *gin.Context) {
 		return
 	}
 
+	refreshToken, refreshTokenPayload, err := handler.jwtService.CreateToken(userID, 24*time.Hour)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+	}
+
+	session, err := handler.sessionUsecase.CreateNewSession(c.Request.Context(), &domains.SessionMongo{
+		UserID:       userID,
+		RefreshToken: refreshToken,
+		UserAgent:    c.Request.UserAgent(),
+		ClientIP:     c.ClientIP(),
+		ExpiredAt:    refreshTokenPayload.ExpiredAt,
+	})
+
 	c.JSON(http.StatusOK, gin.H{
-		"CSRF_TOKEN": token,
+		"session_id":               session.ID,
+		"access_token":             accessToken,
+		"access_token_expired_at":  accessTokenPayload.ExpiredAt,
+		"refresh_token":            refreshToken,
+		"refresh_token_expired_at": refreshTokenPayload.ExpiredAt,
 	})
 }

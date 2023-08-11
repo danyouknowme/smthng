@@ -47,7 +47,7 @@ func AuthMiddleware(jwtService jwt.JWTService) gin.HandlerFunc {
 		}
 
 		accessToken := fields[1]
-		payload, err := jwtService.ParseToken(accessToken)
+		payload, err := jwtService.VerifyToken(accessToken)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": err.Error(),

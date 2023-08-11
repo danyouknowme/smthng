@@ -12,9 +12,7 @@ type AppConfig struct {
 	MongoURI      string `mapstructure:"MONGO_URI"`
 	CloudinaryURI string `mapstructure:"CLD_URI"`
 
-	JwtSecret string `mapstructure:"JWT_SECRET"`
-	JwtIssuer string `mapstructure:"JWT_ISSUER"`
-	JwtExp    int    `mapstructure:"JWT_EXP"`
+	TokenSymmetricKey string `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 }
 
 func Load(config *AppConfig) error {

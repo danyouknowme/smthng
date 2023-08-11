@@ -4,54 +4,62 @@ import (
 	"errors"
 	"time"
 
-	driJWT "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 )
 
-type JWTService interface {
-	GenerateToken(userId string) (t string, err error)
-	ParseToken(tokenString string) (claims JwtCustomClaim, err error)
-}
+const minSecretKeySize = 32
 
-type JwtCustomClaim struct {
-	UserID string
-	driJWT.StandardClaims
-}
+var (
+	ErrInvalidToken = errors.New("token is invalid")
+	ErrExpiredToken = errors.New("token is expired")
+)
 
 type jwtService struct {
 	secretKey string
-	issuer    string
-	expired   int
 }
 
-func NewJWTService(secretKey, issuer string, expired int) JWTService {
-	return &jwtService{
-		issuer:    issuer,
-		secretKey: secretKey,
-		expired:   expired,
-	}
+type JWTService interface {
+	CreateToken(username string, duration time.Duration) (string, *Payload, error)
+	VerifyToken(token string) (*Payload, error)
 }
 
-func (j *jwtService) GenerateToken(userID string) (string, error) {
-	claims := &JwtCustomClaim{
-		userID,
-		driJWT.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * time.Duration(j.expired)).Unix(),
-			Issuer:    j.issuer,
-			IssuedAt:  time.Now().Unix(),
-		},
-	}
-
-	token := driJWT.NewWithClaims(driJWT.SigningMethodHS256, claims)
-	t, err := token.SignedString([]byte(j.secretKey))
-	return t, err
+func NewJWTService(secretKey string) JWTService {
+	return &jwtService{secretKey}
 }
 
-func (j *jwtService) ParseToken(tokenString string) (claims JwtCustomClaim, err error) {
-	if token, err := driJWT.ParseWithClaims(tokenString, &claims, func(token *driJWT.Token) (interface{}, error) {
-		return []byte(j.secretKey), nil
-	}); err != nil || !token.Valid {
-		return JwtCustomClaim{}, errors.New("token is not valid")
+func (maker *jwtService) CreateToken(username string, duration time.Duration) (string, *Payload, error) {
+	payload, err := NewPayload(username, duration)
+	if err != nil {
+		return "", payload, err
 	}
 
-	return
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+	token, err := jwtToken.SignedString([]byte(maker.secretKey))
+	return token, payload, err
+}
+
+func (maker *jwtService) VerifyToken(token string) (*Payload, error) {
+	keyFunc := func(token *jwt.Token) (interface{}, error) {
+		_, ok := token.Method.(*jwt.SigningMethodHMAC)
+		if !ok {
+			return nil, ErrInvalidToken
+		}
+		return []byte(maker.secretKey), nil
+	}
+
+	jwtToken, err := jwt.ParseWithClaims(token, &Payload{}, keyFunc)
+	if err != nil {
+		verr, ok := err.(*jwt.ValidationError)
+		if ok && errors.Is(verr.Inner, ErrExpiredToken) {
+			return nil, ErrExpiredToken
+		}
+		return nil, ErrInvalidToken
+	}
+
+	payload, ok := jwtToken.Claims.(*Payload)
+	if !ok {
+		return nil, ErrInvalidToken
+	}
+
+	return payload, nil
 }
