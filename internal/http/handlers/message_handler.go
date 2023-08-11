@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/danyouknowme/smthng/cmd/ws"
@@ -9,6 +10,10 @@ import (
 	"github.com/danyouknowme/smthng/internal/http/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+)
+
+var (
+	ErrPermissionRequired = errors.New("permission required")
 )
 
 type messageHandler struct {
@@ -42,31 +47,23 @@ func (handler *messageHandler) CreateMessage(c *gin.Context) {
 	var req domains.MessageRequest
 
 	if err := c.ShouldBindWith(&req, binding.FormMultipart); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusBadRequest, err.Error(), nil))
 		return
 	}
 
 	channel, err := handler.channelUsecase.GetChannelByID(c.Request.Context(), channelID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
 	if !handler.channelUsecase.IsMember(c.Request.Context(), channel.ID, userID) {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": "You are not a member of this channel",
-		})
+		c.JSON(makeHTTPResponse(http.StatusForbidden, ErrPermissionRequired.Error(), nil))
 		return
 	}
 
 	if err := req.Validate(); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusBadRequest, err.Error(), nil))
 		return
 	}
 
@@ -77,9 +74,7 @@ func (handler *messageHandler) CreateMessage(c *gin.Context) {
 		UserID:    userID,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
@@ -95,10 +90,7 @@ func (handler *messageHandler) CreateMessage(c *gin.Context) {
 
 	handler.socketService.EmitNewMessage(channelID, &response)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "message created",
-		"data":    message,
-	})
+	c.JSON(makeHTTPResponse(http.StatusCreated, "Message created Successfully", message))
 }
 
 func (handler *messageHandler) EditMessage(c *gin.Context) {
@@ -108,32 +100,24 @@ func (handler *messageHandler) EditMessage(c *gin.Context) {
 	var req domains.MessageRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusBadRequest, err.Error(), nil))
 		return
 	}
 
 	message, err := handler.messageUsecase.GetMessageByID(c.Request.Context(), messageID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
 	if message.Member.ID != userID {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": "You are not the owner of this message",
-		})
+		c.JSON(makeHTTPResponse(http.StatusForbidden, ErrPermissionRequired.Error(), nil))
 		return
 	}
 
 	updatedMessage, err := handler.messageUsecase.UpdateMessageByID(c.Request.Context(), message.ID, *req.Text)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
@@ -149,10 +133,7 @@ func (handler *messageHandler) EditMessage(c *gin.Context) {
 
 	handler.socketService.EmitEditMessage(updatedMessage.ChannelID, &response)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "message updated",
-		"data":    updatedMessage,
-	})
+	c.JSON(makeHTTPResponse(http.StatusOK, "Message updated Successfully", updatedMessage))
 }
 
 func (handler *messageHandler) DeleteMessage(c *gin.Context) {
@@ -161,32 +142,21 @@ func (handler *messageHandler) DeleteMessage(c *gin.Context) {
 
 	message, err := handler.messageUsecase.GetMessageByID(c.Request.Context(), messageID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
 	if message.Member.ID != userID {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": "You are not the owner of this message",
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, ErrPermissionRequired.Error(), nil))
 		return
 	}
 
 	if err := handler.messageUsecase.DeleteMessageByID(c.Request.Context(), message.ID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
 	handler.socketService.EmitDeleteMessage(message.ChannelID, message.ID)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "message deleted",
-		"data": gin.H{
-			"message_id": message.ID,
-		},
-	})
+	c.JSON(makeHTTPResponse(http.StatusOK, "Message deleted successfully", message))
 }

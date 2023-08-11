@@ -34,17 +34,13 @@ func (handler *userHandler) Register(c *gin.Context) {
 	var req *domains.RegisterRequest
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusBadRequest, err.Error(), nil))
 		return
 	}
 
 	hashedPassword, err := helpers.HashPassword(req.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
@@ -52,48 +48,36 @@ func (handler *userHandler) Register(c *gin.Context) {
 
 	err = handler.userUsecase.CreateNewUser(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "user created",
-	})
+	c.JSON(makeHTTPResponse(http.StatusCreated, "New user created successfully", nil))
 }
 
 func (handler *userHandler) Login(c *gin.Context) {
 	var req *domains.LoginRequest
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusBadRequest, err.Error(), nil))
 		return
 	}
 
 	userID, err := handler.userUsecase.Authenticate(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusUnauthorized, err.Error(), nil))
 		return
 	}
 
 	accessToken, accessTokenPayload, err := handler.jwtService.CreateToken(userID, 15*time.Minute)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
 	refreshToken, refreshTokenPayload, err := handler.jwtService.CreateToken(userID, 24*time.Hour)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 	}
 
 	session, err := handler.sessionUsecase.CreateNewSession(c.Request.Context(), &domains.SessionMongo{
@@ -103,12 +87,18 @@ func (handler *userHandler) Login(c *gin.Context) {
 		ClientIP:     c.ClientIP(),
 		ExpiredAt:    refreshTokenPayload.ExpiredAt,
 	})
+	if err != nil {
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{
+	resp := gin.H{
 		"session_id":               session.ID,
 		"access_token":             accessToken,
 		"access_token_expired_at":  accessTokenPayload.ExpiredAt,
 		"refresh_token":            refreshToken,
 		"refresh_token_expired_at": refreshTokenPayload.ExpiredAt,
-	})
+	}
+
+	c.JSON(makeHTTPResponse(http.StatusOK, "Login successfully", resp))
 }

@@ -26,9 +26,7 @@ func NewChannelHandler(channelUsecase usecases.ChannelUsecase) ChannelHandler {
 func (handler *channelHandler) CreateNewChannel(c *gin.Context) {
 	var req *domains.CreateChannelRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusBadRequest, err.Error(), nil))
 		return
 	}
 
@@ -37,13 +35,9 @@ func (handler *channelHandler) CreateNewChannel(c *gin.Context) {
 
 	err := handler.channelUsecase.CreateNewChannel(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, err.Error(), nil))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "channel created",
-	})
+	c.JSON(makeHTTPResponse(http.StatusCreated, "Channel created successfully", nil))
 }
