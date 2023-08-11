@@ -2,11 +2,11 @@ package usecases
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/danyouknowme/smthng/internal/bussiness/domains"
 	"github.com/danyouknowme/smthng/internal/datasources/repositories"
+	"github.com/danyouknowme/smthng/pkg/apperrors"
 	"github.com/danyouknowme/smthng/pkg/helpers"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -56,7 +56,7 @@ func (usecase *userUsecase) Authenticate(ctx context.Context, req *domains.Login
 	}
 
 	if err = helpers.CheckPassword(req.Password, userMongo.Password); err != nil {
-		return "", errors.New("invalid username or password")
+		return "", apperrors.ErrInvalidUsernameOrPassword
 	}
 
 	return userMongo.ID.Hex(), nil

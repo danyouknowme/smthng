@@ -1,19 +1,15 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/danyouknowme/smthng/cmd/ws"
 	"github.com/danyouknowme/smthng/internal/bussiness/domains"
 	"github.com/danyouknowme/smthng/internal/bussiness/usecases"
 	"github.com/danyouknowme/smthng/internal/http/middleware"
+	"github.com/danyouknowme/smthng/pkg/apperrors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-)
-
-var (
-	ErrPermissionRequired = errors.New("permission required")
 )
 
 type messageHandler struct {
@@ -58,7 +54,7 @@ func (handler *messageHandler) CreateMessage(c *gin.Context) {
 	}
 
 	if !handler.channelUsecase.IsMember(c.Request.Context(), channel.ID, userID) {
-		c.JSON(makeHTTPResponse(http.StatusForbidden, ErrPermissionRequired.Error(), nil))
+		c.JSON(makeHTTPResponse(http.StatusForbidden, apperrors.ErrPermissionRequired.Error(), nil))
 		return
 	}
 
@@ -111,7 +107,7 @@ func (handler *messageHandler) EditMessage(c *gin.Context) {
 	}
 
 	if message.Member.ID != userID {
-		c.JSON(makeHTTPResponse(http.StatusForbidden, ErrPermissionRequired.Error(), nil))
+		c.JSON(makeHTTPResponse(http.StatusForbidden, apperrors.ErrPermissionRequired.Error(), nil))
 		return
 	}
 
@@ -147,7 +143,7 @@ func (handler *messageHandler) DeleteMessage(c *gin.Context) {
 	}
 
 	if message.Member.ID != userID {
-		c.JSON(makeHTTPResponse(http.StatusInternalServerError, ErrPermissionRequired.Error(), nil))
+		c.JSON(makeHTTPResponse(http.StatusInternalServerError, apperrors.ErrPermissionRequired.Error(), nil))
 		return
 	}
 

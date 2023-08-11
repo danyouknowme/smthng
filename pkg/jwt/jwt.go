@@ -4,14 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/danyouknowme/smthng/pkg/apperrors"
 	"github.com/golang-jwt/jwt"
-)
-
-const minSecretKeySize = 32
-
-var (
-	ErrInvalidToken = errors.New("token is invalid")
-	ErrExpiredToken = errors.New("token is expired")
 )
 
 type jwtService struct {
@@ -42,7 +36,7 @@ func (maker *jwtService) VerifyToken(token string) (*Payload, error) {
 	keyFunc := func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
-			return nil, ErrInvalidToken
+			return nil, apperrors.ErrInvalidToken
 		}
 		return []byte(maker.secretKey), nil
 	}
@@ -50,15 +44,15 @@ func (maker *jwtService) VerifyToken(token string) (*Payload, error) {
 	jwtToken, err := jwt.ParseWithClaims(token, &Payload{}, keyFunc)
 	if err != nil {
 		verr, ok := err.(*jwt.ValidationError)
-		if ok && errors.Is(verr.Inner, ErrExpiredToken) {
-			return nil, ErrExpiredToken
+		if ok && errors.Is(verr.Inner, apperrors.ErrExpiredToken) {
+			return nil, apperrors.ErrExpiredToken
 		}
-		return nil, ErrInvalidToken
+		return nil, apperrors.ErrInvalidToken
 	}
 
 	payload, ok := jwtToken.Claims.(*Payload)
 	if !ok {
-		return nil, ErrInvalidToken
+		return nil, apperrors.ErrInvalidToken
 	}
 
 	return payload, nil
